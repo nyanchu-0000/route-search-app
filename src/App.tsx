@@ -4,6 +4,7 @@ import {
     useJsApiLoader,
     DirectionsService,
     DirectionsRenderer,
+    Marker,
 } from "@react-google-maps/api";
 
 const containerStyle = { width: "100%", height: "100vh" };
@@ -20,6 +21,9 @@ function App() {
         d: string;
     } | null>(null);
 
+    const [map, setMap] = useState<google.maps.Map | null>(null);
+    const [places, setPlaces] = useState<google.maps.places.PlaceResult[]>([]);
+
     const { isLoaded, loadError } = useJsApiLoader({
         id: "google-map-script",
         googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "",
@@ -35,8 +39,33 @@ function App() {
     const handleSearch = () => {
         if (origin && destination) {
             setDirections(null);
+            setPlaces([]);
             setSearchQuery({ o: origin, d: destination });
         }
+    };
+
+    const searchPlaces = (keyword: string) => {
+        if (!map || !directions) return;
+
+        const service = new google.maps.places.PlacesService(map);
+        const routeBounds = directions.routes[0].bounds;
+
+        service.textSearch(
+            {
+                query: keyword,
+                bounds: routeBounds,
+            },
+            (results, status) => {
+                if (
+                    status === google.maps.places.PlacesServiceStatus.OK &&
+                    results
+                ) {
+                    setPlaces(results);
+                } else {
+                    alert(`${keyword}は見つかりませんでした。`);
+                }
+            },
+        );
     };
 
     return (
@@ -66,6 +95,21 @@ function App() {
                         ルートを表示
                     </button>
                 </div>
+                {directions && (
+                    <div className="mt-5 pt-4 border-t border-gray-200">
+                        <div className="flex gap-2">
+                            {["コンビニ", "カフェ", "駐車場"].map((keyword) => (
+                                <button
+                                    key={keyword}
+                                    onClick={() => searchPlaces(keyword)}
+                                    className="flex-1 py-2 bg-white border border-gray-300 text-xs font-bold text-gray-600 rounded-lg hover:border-black hover:text-black transition-all"
+                                >
+                                    {keyword}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* 地図エリア */}
@@ -73,7 +117,15 @@ function App() {
                 mapContainerStyle={containerStyle}
                 center={center}
                 zoom={13}
+                onLoad={(mapInstance) => setMap(mapInstance)}
             >
+                {places.map((place, index) => (
+                    <Marker
+                        key={index}
+                        position={place.geometry?.location}
+                        title={place.name}
+                    />
+                ))}
                 {searchQuery && (
                     <DirectionsService
                         options={{

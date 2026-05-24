@@ -8,10 +8,9 @@ import {
 } from "@react-google-maps/api";
 
 const containerStyle = { width: "100%", height: "100vh" };
-const center = { lat: 35.6812, lng: 139.7671 }; // 東京駅
+const center = { lat: 35.6812, lng: 139.7671 };
 
 function App() {
-    // 1. フックは必ず最初に宣言
     const [directions, setDirections] =
         useState<google.maps.DirectionsResult | null>(null);
     const [origin, setOrigin] = useState("");
@@ -23,19 +22,18 @@ function App() {
 
     const [map, setMap] = useState<google.maps.Map | null>(null);
     const [places, setPlaces] = useState<google.maps.places.PlaceResult[]>([]);
+    const [radius, setRadius] = useState<number>(500);
 
     const { isLoaded, loadError } = useJsApiLoader({
         id: "google-map-script",
         googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "",
-        libraries: ["places"],
+        libraries: ["places", "geometry"],
     });
 
-    // 2. 読み込みエラーや読み込み中の処理
     if (loadError)
         return <div className="p-10">地図の読み込みに失敗しました</div>;
     if (!isLoaded) return <div className="p-10 font-sans">読み込み中...</div>;
 
-    // 3. 検索実行
     const handleSearch = () => {
         if (origin && destination) {
             setDirections(null);
@@ -49,6 +47,7 @@ function App() {
 
         const service = new google.maps.places.PlacesService(map);
         const routeBounds = directions.routes[0].bounds;
+        const path = directions.routes[0].overview_path;
 
         service.textSearch(
             {
@@ -60,7 +59,28 @@ function App() {
                     status === google.maps.places.PlacesServiceStatus.OK &&
                     results
                 ) {
-                    setPlaces(results);
+                    // ルートから近いものだけを残すフィルタリング
+                    const filteredPlaces = results.filter((place) => {
+                        if (!place.geometry?.location) return false;
+
+                        const distances = path.map((point) =>
+                            google.maps.geometry.spherical.computeDistanceBetween(
+                                place.geometry!.location!,
+                                point,
+                            ),
+                        );
+
+                        const minDistance = Math.min(...distances);
+                        return minDistance <= radius;
+                    });
+
+                    setPlaces(filteredPlaces);
+
+                    if (filteredPlaces.length === 0) {
+                        alert(
+                            `ルート周辺（${radius}m以内）に${keyword}は見つかりませんでした。`,
+                        );
+                    }
                 } else {
                     alert(`${keyword}は見つかりませんでした。`);
                 }
@@ -97,6 +117,27 @@ function App() {
                 </div>
                 {directions && (
                     <div className="mt-5 pt-4 border-t border-gray-200">
+                        <div className="mb-4 flex items-center justify-between">
+                            <span className="text-xs font-bold text-gray-500">
+                                検索範囲
+                            </span>
+                            <div className="flex gap-2">
+                                {[300, 500, 1000].map((r) => (
+                                    <button
+                                        key={r}
+                                        onClick={() => setRadius(r)}
+                                        className={`px-3 py-1 text-xs font-bold rounded-full transition-all ${
+                                            radius === r
+                                                ? "bg-black text-white"
+                                                : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                                        }`}
+                                    >
+                                        {r}m
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
                         <div className="flex gap-2">
                             {["コンビニ", "カフェ", "駐車場"].map((keyword) => (
                                 <button

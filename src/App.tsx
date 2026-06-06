@@ -127,19 +127,19 @@ function App() {
                     </div>
                     {directions && (
                         <div className="mt-10 pt-8 border-t border-gray-100">
-                            <h2 className="text-sm font-black mb-5 text-gray-800">
+                            <h2 className="text-sm font-black mb-6 text-gray-800">
                                 周辺施設を探す
                             </h2>
-                            <div className="mb-6 flex items-center justify-between">
-                                <span className="text-xs font-bold text-gray-400">
+                            <div className="mb-6">
+                                <span className="block text-xs font-bold text-gray-400 mb-2 pl-1">
                                     検索範囲
                                 </span>
-                                <div className="flex gap-1.5">
+                                <div className="flex gap-2">
                                     {[300, 500, 1000].map((r) => (
                                         <button
                                             key={r}
                                             onClick={() => setRadius(r)}
-                                            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                                            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
                                                 radius === r
                                                     ? "bg-black text-white shadow-sm"
                                                     : "bg-gray-100 text-gray-500 hover:bg-gray-200"
@@ -151,20 +151,25 @@ function App() {
                                 </div>
                             </div>
 
-                            <div className="flex gap-2">
-                                {["コンビニ", "カフェ", "駐車場"].map(
-                                    (keyword) => (
-                                        <button
-                                            key={keyword}
-                                            onClick={() =>
-                                                searchPlaces(keyword)
-                                            }
-                                            className="py-2.5 bg-white border border-gray-200 text-xs font-bold text-gray-600 rounded-xl hover:border-black hover:text-black transition-all"
-                                        >
-                                            {keyword}
-                                        </button>
-                                    ),
-                                )}
+                            <div>
+                                <span className="block text-xs font-bold text-gray-400 mb-2 pl-1">
+                                    スポット
+                                </span>
+                                <div className="flex gap-2">
+                                    {["コンビニ", "カフェ", "駐車場"].map(
+                                        (keyword) => (
+                                            <button
+                                                key={keyword}
+                                                onClick={() =>
+                                                    searchPlaces(keyword)
+                                                }
+                                                className="flex-1 py-2.5 bg-white border border-gray-200 text-xs font-bold text-gray-600 rounded-xl hover:border-black hover:text-black transition-all"
+                                            >
+                                                {keyword}
+                                            </button>
+                                        ),
+                                    )}
+                                </div>
                             </div>
                         </div>
                     )}
